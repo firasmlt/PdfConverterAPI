@@ -8,6 +8,8 @@ const { exec } = require("child_process");
 
 require("dotenv").config({ path: ".env" });
 
+const checkPayload = require("./middleware/checkPayload");
+
 app.use(cors());
 app.use(express.json());
 app.use(fileUpload({ createParentPath: false }));
@@ -49,14 +51,55 @@ const convertPDFToWord = (filename) => {
     });
 };
 
-// upload file -> save to files directory -> execute command line tool pdf2docx to convert -> return file
+const convertPDFToPPT = (filename) => {
+    return new Promise((resolve, reject) => {
+        exec(
+            `pdf2pptx files/${filename}.pdf --output files/${filename}.pptx`,
+            (error, stdout, stderr) => {
+                console.log("entered");
+                if (error) {
+                    console.log(error);
+                    reject(error);
+                    return;
+                }
+                const output = `${__dirname}/files/${filename}.pptx`;
+                if (stderr) {
+                    resolve(output);
+                    return;
+                }
+                resolve(output);
+            }
+        );
+    });
+};
 
-app.post("/convert", async (req, res) => {
+app.post("/convertToWord", checkPayload, async (req, res) => {
     try {
         const pdfFile = req.files.file;
         const filename = await saveFile(pdfFile);
-
         const docxFilePath = await convertPDFToWord(filename);
+        console.log(docxFilePath);
+        // res.json({ status: "success", message: "file converted" });
+        res.download(docxFilePath, (err) => {
+            if (err) {
+                console.log(err);
+            }
+            fs.unlinkSync(docxFilePath);
+            fs.unlinkSync(`${__dirname}/files/${filename}.pdf`);
+        });
+    } catch (err) {
+        res.json({
+            status: "error",
+            message: "internal server error",
+            error: err,
+        });
+    }
+});
+app.post("/convertToPpt", checkPayload, async (req, res) => {
+    try {
+        const pdfFile = req.files.file;
+        const filename = await saveFile(pdfFile);
+        const docxFilePath = await convertPDFToPPT(filename);
         console.log(docxFilePath);
         // res.json({ status: "success", message: "file converted" });
         res.download(docxFilePath, (err) => {
