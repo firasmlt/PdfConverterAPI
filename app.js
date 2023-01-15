@@ -84,15 +84,19 @@ app.post("/convertToWord", checkPayload, async (req, res) => {
             if (err) {
                 console.log(err);
             }
-            fs.unlinkSync(docxFilePath);
-            fs.unlinkSync(`${__dirname}/files/${filename}.pdf`);
+            fs.unlink(docxFilePath, (err) => console.log(err));
+            fs.unlink(`${__dirname}/files/${filename}.pdf`, (err) =>
+                console.log(err)
+            );
         });
     } catch (err) {
-        res.json({
+        const response = {
             status: "error",
             message: "internal server error",
-            error: err,
-        });
+        };
+        if (process.env.ENV === "DEV") response.error = err;
+
+        res.status(500).json(response);
     }
 });
 app.post("/convertToPpt", checkPayload, async (req, res) => {
@@ -106,15 +110,24 @@ app.post("/convertToPpt", checkPayload, async (req, res) => {
             if (err) {
                 console.log(err);
             }
-            fs.unlinkSync(docxFilePath);
-            fs.unlinkSync(`${__dirname}/files/${filename}.pdf`);
+            fs.unlink(docxFilePath, (err) => console.log(err));
+            fs.unlink(`${__dirname}/files/${filename}.pdf`, (err) =>
+                console.log(err)
+            );
         });
     } catch (err) {
-        res.json({
+        res.status(500).json({
             status: "error",
             message: "internal server error",
             error: err,
         });
+        const response = {
+            status: "error",
+            message: "internal server error",
+        };
+        if (process.env.ENV === "DEV") response.error = err;
+
+        res.status(500).json(response);
     }
 });
 
